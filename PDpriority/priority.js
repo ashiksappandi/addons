@@ -56,7 +56,7 @@ function PDRequest(token, endpoint, method, options) {
 }
 
 function fetch(endpoint, params, callback, progressCallback) {
-	var limit = 100;
+	var limit = 50;
 	var infoFns = [];
 	var fetchedData = [];
 
@@ -70,6 +70,7 @@ function fetch(endpoint, params, callback, progressCallback) {
 	var options = {
 		data: getParams,
 		success: function(data) {
+
 			var total = data.total;
 			Array.prototype.push.apply(fetchedData, data[endpoint]);
 
@@ -84,6 +85,7 @@ function fetch(endpoint, params, callback, progressCallback) {
 						var options = {
 							data: $.extend(true, { offset: offset }, getParams),
 							success: function(data) {
+
 								Array.prototype.push.apply(fetchedData, data[endpoint]);
 								if (progressCallback) {
 									progressCallback(data.total, fetchedData.length);
@@ -95,6 +97,7 @@ function fetch(endpoint, params, callback, progressCallback) {
 					});
 				});
 
+
 				async.parallel(infoFns, function(err, results) {
 					callback(fetchedData);
 				});
@@ -103,6 +106,7 @@ function fetch(endpoint, params, callback, progressCallback) {
 			}
 		}
 	}
+
 	PDRequest(getParameterByName('token'), endpoint, "GET", options);
 }
 
@@ -199,19 +203,35 @@ function buildReport(since, until, reuseFetchedData) {
 				incident.priority = { name: '~none~' };
 			}
 
+			var agent_summary = "Unknown";
+			var agent_html_url = "";
+
+			if ( incident.first_trigger_log_entry && incident.first_trigger_log_entry.agent && incident.first_trigger_log_entry.agent.html_url && incident.first_trigger_log_entry.agent.summary ) {
+				agent_summary = incident.first_trigger_log_entry.agent.summary;
+				agent_html_url = incident.first_trigger_log_entry.agent.html_url;
+			} else if ( incident.first_trigger_log_entry && incident.first_trigger_log_entry.channel && incident.first_trigger_log_entry.channel.issue && incident.first_trigger_log_entry.channel.issue.url && incident.first_trigger_log_entry.channel.issue.key ) {
+				agent_summary = `${incident.first_trigger_log_entry.channel.type}: ${incident.first_trigger_log_entry.channel.issue.key}`
+				agent_html_url = incident.first_trigger_log_entry.channel.issue.url;
+			}
+
 			if ( selected_priorities.indexOf(incident.priority.name) > -1 ) {
-				tableData.push([
-					'<a href="' + incident.html_url + '" target="blank">' + incident.incident_number + '</a>',
-					incident.title,
-					incident.status,
-					incident.priority.name,
-					moment(incident.created_at).format('l LTS [GMT]ZZ'),
-					'<a href="' + incident.first_trigger_log_entry.agent.html_url + '" target="blank">' + incident.first_trigger_log_entry.agent.summary + '</a>',
-					incident.status == 'resolved' ? moment(incident.last_status_change_at).format('l LTS [GMT]ZZ') : '(in progress)',
-					incident.status == 'resolved' ? '<a href="' + incident.last_status_change_by.html_url + '" target="blank">' + incident.last_status_change_by.summary + '</a>' : '(in progress)',
-					incident.status == 'resolved' ? secondsToHHMMSS(moment.duration(moment(incident.last_status_change_at).diff(moment(incident.created_at))).asSeconds()) : '(in progress)',
-					'<a href="' + incident.service.html_url + '" target="blank">' + incident.service.summary + '</a>',
-				]);
+				try {
+					tableData.push([
+						'<a href="' + incident.html_url + '" target="blank">' + incident.incident_number + '</a>',
+						incident.title,
+						incident.status,
+						incident.priority.name,
+						moment(incident.created_at).format('l LTS [GMT]ZZ'),
+						'<a href="' + agent_html_url + '" target="blank">' + agent_summary + '</a>',
+						incident.status == 'resolved' ? moment(incident.last_status_change_at).format('l LTS [GMT]ZZ') : '(in progress)',
+						incident.status == 'resolved' ? '<a href="' + incident.last_status_change_by.html_url + '" target="blank">' + incident.last_status_change_by.summary + '</a>' : '(in progress)',
+						incident.status == 'resolved' ? secondsToHHMMSS(moment.duration(moment(incident.last_status_change_at).diff(moment(incident.created_at))).asSeconds()) : '(in progress)',
+						'<a href="' + incident.service.html_url + '" target="blank">' + incident.service.summary + '</a>',
+					]);
+				} catch (e) {
+					console.log(`got an exception: ${e}`);
+					console.log(`here's the incident: ${JSON.stringify(incident, null, 4)}`);
+				}
 			}
 		});
 
@@ -250,9 +270,15 @@ function main() {
 		$('#controls').hide();
 	}
 
+	var defaultHistoryDays = parseInt(getParameterByName('defaultHistoryDays'));
+
+	if ( ! defaultHistoryDays > 0 ) {
+		defaultHistoryDays = 7;
+	}
+
 	var until = new Date();
 	var since = new Date();
-	since.setDate(since.getDate() - 7);
+	since.setDate(since.getDate() - defaultHistoryDays);
 
 	since.setHours(0,0,0,0);
 	until.setHours(23,59,59,999);
