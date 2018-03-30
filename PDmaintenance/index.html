@@ -6,6 +6,9 @@
 	    <meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>maintenance</title>
 		<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/css/jquery.dataTables.min.css" rel="stylesheet">
+		<link href="https://cdn.datatables.net/buttons/1.2.2/css/buttons.dataTables.min.css" rel="stylesheet">
+		<link href="https://cdn.datatables.net/select/1.2.1/css/select.dataTables.min.css" rel="stylesheet">
 		
 		<link href="maintenance.css" rel="stylesheet">
 	</head>
@@ -15,6 +18,12 @@
 				<div class="col-md-12">
 					<h1>Service Maintenance</h1>
 					<h3>Check the box to enable the service, uncheck to disable</h3>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-4" id="details">
+				</div>
+				<div class="col-md-8" id="results">
 				</div>
 			</div>
 			<div class="row">
@@ -36,6 +45,10 @@
 		</div>
 
 		<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+		<script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+		<script src="https://cdn.datatables.net/buttons/1.2.2/js/dataTables.buttons.min.js"></script>
+		<script src="https://cdn.datatables.net/select/1.2.1/js/dataTables.select.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/async/2.1.2/async.js"></script>
 		<script src="maintenance.js"></script>
 	</body>

@@ -1,4 +1,6 @@
 var token;
+var table;
+var servicesState;
 
 function getParameterByName(name) {
     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
@@ -92,46 +94,89 @@ function fetchServices(callback) {
 	fetch("services", null, callback);
 }
 
+function setServiceEnabled(serviceID, serviceName, enabled) {
+	var params = {
+		data: {
+			service: {
+				status: (enabled ? "active" : "disabled")
+			}
+		},
+		success: function() {
+			servicesState[serviceID].pdState = enabled;
+			$('#results').append('Service ' + serviceName + ' was ' + (enabled ? "enabled" : "disabled") + '<br>\n');
+		}
+	};
+	PDRequest(getParameterByName('token'), 'services/' + serviceID, 'put', params);
+}
+
 function main() {
 	token = getParameterByName('token');
 	$('#result').html('');
 	
 	$('.busy').show();
 	fetchServices(function(services) {
-		var htmlStr = '';
-		services.forEach(function(service) {
-			htmlStr += '<div><input type="checkbox" value="' + service.summary + '" id="' + service.id + '"' + (service.status == 'disabled' ? '' : ' checked') + '>';
-			htmlStr += '<label for="' + service.id + '">' + service.summary + '</label></div>';
-		});
-		$('#service-list').html(htmlStr);
+		$('#details').html($('<table/>', {
+			id: "details-table",
+			class: "display"
+		}));
 
-		$(':checkbox').change(function() {
-			var name = this.value;
-			if ( $(this).prop('checked') ) {
-				var params = {
-					data: {
-						service: {
-							status: "active"
-						}
-					},
-					success: function() {
-						$('#result').append('Service ' + name + ' was enabled<br>\n');
+		var tableData = [];
+		servicesState = {};
+
+		services.forEach(function(service) {
+			var isEnabled = (service.status == 'disabled' ? false : true);
+			servicesState[service.id] = { name: service.summary, pdState: isEnabled, uiState: isEnabled };
+			tableData.push([
+				'<input type="checkbox" value="' + service.summary + '" id="' + service.id + '"' + (isEnabled ? ' checked' : '') + '>',
+				service.summary
+			]);
+		});
+
+		var columnTitles = [
+				{ title: "Enabled" },
+				{ title: "Service Name" }
+			];
+		table = $('#details-table').DataTable({
+			data: tableData,
+			columns: columnTitles,
+			dom: 'Bfrtip',
+			searching: false,
+			buttons: [
+				{
+					text: "Select All",
+					action: function () {
+						$('input[type="checkbox"]').prop('checked', true);
+						Object.keys(servicesState).forEach(function(key) {
+							servicesState[key].uiState = true;
+						});
 					}
-				};
-				PDRequest(getParameterByName('token'), 'services/' + this.id, 'put', params);
-			} else {
-				var params = {
-					data: {
-						service: {
-							status: "disabled"
-						}
-					},
-					success: function() {
-						$('#result').append('Service ' + name + ' was disabled<br>\n');
+				},
+				{
+					text: "Deselect All",
+					action: function () {
+						$('input[type="checkbox"]').prop('checked', false);
+						Object.keys(servicesState).forEach(function(key) {
+							servicesState[key].uiState = false;
+						});
 					}
-				};
-				PDRequest(getParameterByName('token'), 'services/' + this.id, 'put', params);
-			}
+				},
+				{
+					text: "Apply",
+					action: function (e, dt, node, config) {
+						Object.keys(servicesState).forEach(function(key) {
+							if ( servicesState[key].uiState != servicesState[key].pdState ) {
+								setServiceEnabled(key, servicesState[key].name, servicesState[key].uiState);
+							}
+						});
+					}
+				}
+			],
+			order: [[1, 'asc']],
+			pageLength: 50
+		});
+
+		$('input[type="checkbox"]').change(function () {
+			servicesState[this.id].uiState = this.checked;
 		});
 
 		$('.busy').hide();
