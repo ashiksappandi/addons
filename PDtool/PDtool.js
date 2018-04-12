@@ -141,11 +141,11 @@ function populateIntegrationsResult() {
 }
 
 // find all the generic API integrations, then get the integration keys from those
-function populateTriggerSelect(data) {
+function populateTriggerSelect(services) {
 	var integrationIDs = [];
 	async.series([
 		function(callback) {
-			data.services.forEach(function(service) {
+			services.forEach(function(service) {
 				service.integrations.forEach(function(integration) {
 					if ( integration.type.includes("generic_events_api_inbound") || integration.type.includes("nagios_inbound") ) {
 						integrationIDs.push([service.id, integration.id]);
@@ -751,15 +751,7 @@ function main() {
 		});
 		$('#trigger-event-select').selectpicker('refresh');
 
-/*
-		var options = {
-			success: function(data) {
-				populateTriggerSelect(data);
-			}
-		};
-*/
 		$('.busy').show();
-// 		PDRequest("services", "GET", options);
 		fetch('services', null, function(data) {
 			populateTriggerSelect(data);
 		});
