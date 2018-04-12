@@ -751,13 +751,18 @@ function main() {
 		});
 		$('#trigger-event-select').selectpicker('refresh');
 
+/*
 		var options = {
 			success: function(data) {
 				populateTriggerSelect(data);
 			}
 		};
+*/
 		$('.busy').show();
-		PDRequest("services", "GET", options);
+// 		PDRequest("services", "GET", options);
+		fetch('services', null, function(data) {
+			populateTriggerSelect(data);
+		});
 	});
 	
 	$('#incidents-button').click(function() {
