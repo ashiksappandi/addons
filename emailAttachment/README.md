@@ -1,4 +1,5 @@
 Email Attachment
+
 A simple add-on example that open email template to send
 
 Usage
