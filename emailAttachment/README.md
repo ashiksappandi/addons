@@ -1,5 +1,5 @@
-Hello World
-A simple add-on example that displays a loading marquee
+Email Attachment
+A simple add-on example that open email template to send
 
 Usage
 Create an add-on within PagerDuty with the following URL:
